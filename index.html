@@ -146,33 +146,85 @@ function addMessage(text, who) {
   el.className = "message " + who;
   el.textContent = text;
   messages.appendChild(el);
-  window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  window.scrollTo({
+    top: document.body.scrollHeight,
+    behavior: "smooth"
+  });
 }
 
-function submit() {
+async function submit() {
   const text = input.value.trim();
-  if (!text) return;
+  if (!text || send.disabled) return;
+
   hero.hidden = true;
   cards.hidden = true;
   addMessage(text, "user");
+
   input.value = "";
-  addMessage(
-    "La interfaz de NOVA Code está funcionando. El agente de IA todavía no está conectado. El siguiente paso será configurar un modelo y un entorno seguro para trabajar con código.",
-    "bot"
-  );
+  input.style.height = "auto";
+  send.disabled = true;
+  send.textContent = "…";
+
+  const loading = document.createElement("div");
+  loading.className = "message bot";
+  loading.textContent = "NOVA está pensando...";
+  messages.appendChild(loading);
+
+  try {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message: text })
+    });
+
+    const data = await response.json();
+    loading.remove();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || "Error al conectar con Gemini."
+      );
+    }
+
+    if (!data.answer) {
+      throw new Error(
+        "Gemini no ha devuelto una respuesta."
+      );
+    }
+
+    addMessage(data.answer, "bot");
+  } catch (error) {
+    loading.remove();
+    addMessage(
+      "No he podido conectar con Gemini. " +
+      error.message +
+      " Comprueba la función y su configuración en Cloudflare.",
+      "bot"
+    );
+  } finally {
+    send.disabled = false;
+    send.textContent = "↑";
+    input.focus();
+  }
 }
 
 send.addEventListener("click", submit);
+
 input.addEventListener("keydown", event => {
   if (event.key === "Enter" && !event.shiftKey) {
     event.preventDefault();
     submit();
   }
 });
+
 input.addEventListener("input", () => {
   input.style.height = "auto";
-  input.style.height = Math.min(input.scrollHeight, 130) + "px";
+  input.style.height =
+    Math.min(input.scrollHeight, 130) + "px";
 });
+
 document.querySelectorAll("[data-prompt]").forEach(button => {
   button.addEventListener("click", () => {
     input.value = button.dataset.prompt;
