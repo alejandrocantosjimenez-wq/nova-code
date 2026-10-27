@@ -3,7 +3,7 @@ export async function onRequestPost({ request, env }) {
   try {
     if (!env.GEMINI_API_KEY) {
       return Response.json(
-        { error: "Falta GEMINI_API_KEY en Cloudflare." },
+        { error: "Falta configurar GEMINI_API_KEY en Cloudflare." },
         { status: 500 }
       );
     }
@@ -30,16 +30,19 @@ export async function onRequestPost({ request, env }) {
 
     const response = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-goog-api-key": env.GEMINI_API_KEY
         },
         body: JSON.stringify({
-          contents: [{
-            role: "user",
-            parts: [{ text: message.trim() }]
-          }]
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: message.trim() }]
+            }
+          ]
         })
       }
     );
@@ -55,9 +58,13 @@ export async function onRequestPost({ request, env }) {
 
     if (!response.ok) {
       const detail = data?.error?.message;
+
       return Response.json(
         {
-          error: "Error de Gemini (" + response.status + "): " +
+          error:
+            "Error de Gemini (" +
+            response.status +
+            "): " +
             (detail || "Google no ha proporcionado más detalles.")
         },
         { status: 502 }
@@ -71,7 +78,9 @@ export async function onRequestPost({ request, env }) {
     if (!answer) {
       return Response.json(
         {
-          error: "Gemini respondió, pero no generó texto. Puede haber un bloqueo de seguridad o una respuesta vacía."
+          error:
+            "Gemini respondió, pero no devolvió texto. " +
+            "Puede haber una respuesta vacía o un bloqueo de seguridad."
         },
         { status: 502 }
       );
@@ -80,7 +89,11 @@ export async function onRequestPost({ request, env }) {
     return Response.json({ answer });
   } catch {
     return Response.json(
-      { error: "No se pudo contactar con Gemini. Revisa la conexión y la configuración de Cloudflare." },
+      {
+        error:
+          "No se pudo contactar con Gemini. " +
+          "Revisa la conexión y la configuración de Cloudflare."
+      },
       { status: 500 }
     );
   }
