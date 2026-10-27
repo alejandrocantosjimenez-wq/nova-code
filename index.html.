@@ -1,0 +1,184 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#09090b">
+<title>NOVA Code — AI Developer</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #09090b;
+  --panel: #121216;
+  --border: #27272a;
+  --text: #fafafa;
+  --muted: #a1a1aa;
+  --accent: #a3e635;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  min-height: 100dvh;
+}
+header {
+  height: 64px; padding: 0 18px; display: flex;
+  align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.logo { font-size: 20px; font-weight: 800; letter-spacing: -1px; }
+.logo span { color: var(--accent); }
+.status { color: var(--muted); font-size: 12px; }
+main {
+  max-width: 760px; margin: auto; padding: 52px 18px 150px;
+}
+.hero { text-align: center; margin-bottom: 34px; }
+.orb {
+  margin: 0 auto 22px; width: 58px; height: 58px;
+  display: grid; place-items: center; border-radius: 19px;
+  background: #1c2611; border: 1px solid #35491d;
+  color: var(--accent); font-size: 28px;
+}
+h1 { font-size: clamp(30px, 7vw, 44px); margin: 0 0 12px; letter-spacing: -1.8px; }
+h1 span { color: var(--accent); }
+.hero p { color: var(--muted); line-height: 1.6; margin: 0; }
+.cards {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin-bottom: 24px;
+}
+.card {
+  text-align: left; background: var(--panel); color: var(--text);
+  border: 1px solid var(--border); border-radius: 14px;
+  padding: 16px; min-height: 94px; cursor: pointer;
+}
+.card:active { border-color: var(--accent); }
+.card b { display: block; font-size: 14px; margin-bottom: 7px; }
+.card small { color: var(--muted); line-height: 1.4; }
+#messages { display: flex; flex-direction: column; gap: 14px; }
+.message {
+  padding: 14px 16px; border-radius: 15px;
+  line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere;
+  font-size: 15px;
+}
+.user { background: #242424; align-self: flex-end; max-width: 90%; }
+.bot { background: var(--panel); border: 1px solid var(--border); }
+.composer {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding: 12px 16px max(16px, env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, var(--bg) 18%);
+}
+.compose-inner { max-width: 760px; margin: auto; }
+.inputbox {
+  display: flex; gap: 8px; align-items: flex-end;
+  padding: 8px; background: var(--panel);
+  border: 1px solid #3f3f46; border-radius: 17px;
+}
+textarea {
+  flex: 1; min-width: 0; resize: none; max-height: 130px;
+  background: transparent; color: var(--text); border: 0;
+  outline: 0; padding: 10px 6px; font: inherit; font-size: 16px;
+}
+#send {
+  border: 0; border-radius: 11px; width: 42px; height: 42px;
+  flex-shrink: 0; background: var(--accent); color: #111;
+  font-size: 21px; font-weight: 800; cursor: pointer;
+}
+#send:disabled { opacity: .5; }
+.note { text-align: center; color: #71717a; font-size: 11px; padding-top: 9px; }
+@media(max-width:420px) {
+  main { padding-top: 38px; }
+  .card { padding: 13px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">NOVA<span>CODE</span></div>
+  <div class="status">● Workspace</div>
+</header>
+<main>
+  <section class="hero" id="hero">
+    <div class="orb">✳</div>
+    <h1>Build something <span>great.</span></h1>
+    <p>Your AI coding workspace.<br>Tu próxima idea empieza aquí.</p>
+  </section>
+
+  <section class="cards" id="cards">
+    <button class="card" data-prompt="Quiero crear una página web moderna desde cero. Ayúdame a planificarla.">
+      <b>✦ Crear un proyecto</b>
+      <small>Empieza una idea desde cero</small>
+    </button>
+    <button class="card" data-prompt="Ayúdame a encontrar y corregir un error en mi código.">
+      <b>⌘ Corregir errores</b>
+      <small>Investiga un problema de código</small>
+    </button>
+    <button class="card" data-prompt="Enséñame cómo organizar los archivos de un proyecto web.">
+      <b>▤ Explorar archivos</b>
+      <small>Organiza tu próximo proyecto</small>
+    </button>
+    <button class="card" data-prompt="Quiero aprender a programar. Proponme un pequeño proyecto práctico.">
+      <b>↗ Aprender y crear</b>
+      <small>Convierte una idea en un plan</small>
+    </button>
+  </section>
+
+  <section id="messages" aria-live="polite"></section>
+</main>
+<div class="composer">
+  <div class="compose-inner">
+    <div class="inputbox">
+      <textarea id="prompt" rows="1" placeholder="Describe lo que quieres construir..." aria-label="Tu mensaje"></textarea>
+      <button id="send" aria-label="Enviar mensaje">↑</button>
+    </div>
+    <div class="note">NOVA Code · Tu espacio de desarrollo</div>
+  </div>
+</div>
+<script>
+const input = document.getElementById("prompt");
+const send = document.getElementById("send");
+const messages = document.getElementById("messages");
+const hero = document.getElementById("hero");
+const cards = document.getElementById("cards");
+
+function addMessage(text, who) {
+  const el = document.createElement("div");
+  el.className = "message " + who;
+  el.textContent = text;
+  messages.appendChild(el);
+  window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+}
+
+function submit() {
+  const text = input.value.trim();
+  if (!text) return;
+  hero.hidden = true;
+  cards.hidden = true;
+  addMessage(text, "user");
+  input.value = "";
+  addMessage(
+    "La interfaz de NOVA Code está funcionando. El agente de IA todavía no está conectado. El siguiente paso será configurar un modelo y un entorno seguro para trabajar con código.",
+    "bot"
+  );
+}
+
+send.addEventListener("click", submit);
+input.addEventListener("keydown", event => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    submit();
+  }
+});
+input.addEventListener("input", () => {
+  input.style.height = "auto";
+  input.style.height = Math.min(input.scrollHeight, 130) + "px";
+});
+document.querySelectorAll("[data-prompt]").forEach(button => {
+  button.addEventListener("click", () => {
+    input.value = button.dataset.prompt;
+    input.focus();
+  });
+});
+</script>
+</body>
+</html>
